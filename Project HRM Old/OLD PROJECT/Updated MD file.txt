@@ -1,0 +1,577 @@
+
+
+I have an existing HRM Portal project with:
+
+* ASP.NET Core 10 Web API backend
+* React + Vite frontend
+* SQL Server database
+* JWT authentication
+
+
+which I want to move in single project with dotnet core +React (in typescript) 
+
+
+The current project is mostly working correctly. **Do NOT rewrite the project from scratch.** I want to restructure/fix only the parts that conflict with the actual requirements below, while preserving existing working functionality wherever possible.
+
+## Important instruction
+
+Before making any code changes:
+
+1. Analyze the existing backend, frontend, database schema, stored procedures, APIs, models, services, and pages.
+2. Compare the current implementation against the requirements below.
+3. Identify exactly what needs to be changed, removed, added, or reused.
+4. Do not unnecessarily rewrite working code.
+5. Do not introduce features that are not required.
+6. Keep the existing architecture and coding style where it is already appropriate.
+7. Treat the requirements below as the **source of truth**, not the existing README.
+
+---
+
+# 1. Login / Portals
+
+There are two sides/portals:
+
+* Admin
+* Shop / Employee
+
+Authentication should remain role-based using JWT.
+
+Do not change authentication unnecessarily if the current implementation already works.
+
+---
+
+# 2. Employee functionality
+
+An employee should be able to:
+
+* View leave balance
+* View leave history
+* Apply for leave
+* View the common company calendar
+* View/edit their profile information
+* Add/change/remove/delete profile image
+* Profile image must have the required format and dimension validation
+* Change their own password
+* Reset/change password functionality should remain separate from profile information
+
+---
+
+# 3. Admin functionality
+
+Admin should be able to:
+
+* View employee information
+* Approve employee leave requests
+* Reject employee leave requests
+* Cancel approved employee leaves
+* Add Management Leave
+* Add National Holidays
+* Manage employee password for a particular employee
+
+Do not add unnecessary admin functionality beyond what is already present and required.
+
+---
+
+# 4. Leave types and quotas
+
+The employee leave types must be **exactly**:
+
+| Leave Type           | Total Quota |
+| -------------------- | ----------: |
+| Earned Leave (EL)    |          15 |
+| Sick Leave (SL)      |           6 |
+| Casual Leave (CL)    |           6 |
+| Floater Leave (FL)   |           3 |
+| Work From Home (WFH) |          40 |
+
+These values must be treated as the required leave entitlements.
+
+Do not use the old README values.
+
+Do not introduce additional employee leave types.
+
+### Management Leave and National Holiday
+
+Management Leave and National Holiday are **NOT employee leave types**.
+
+They are company-wide calendar events.
+
+Employees cannot apply for them.
+
+They should not appear in the employee leave balance.
+
+They should only appear on the common calendar.
+
+---
+
+# 5. Optional Holiday
+
+The existing project has an Optional Holiday feature.
+
+This is **not required**.
+
+Remove/restructure the Optional Holiday functionality wherever it exists:
+
+* frontend pages/components
+* API endpoints
+* backend models/services
+* database tables/SPs if they are used only for Optional Holiday
+* navigation/menu items
+* approval functionality
+
+Floater Leave (FL) should be used for the applicable floater/optional-holiday concept instead.
+
+Do not maintain a separate Optional Holiday module.
+
+Before deleting database objects, verify whether they are used anywhere else.
+
+---
+
+# 6. Leave application
+
+Employees can apply for employee leave.
+
+Required leave types are:
+
+* EL
+* SL
+* CL
+* FL
+* WFH
+
+Management Leave and National Holiday must NOT be selectable when applying leave.
+
+Leave application must contain:
+
+* Leave type
+* Start date
+* End date
+* Reason
+* Half-day option
+
+Reason is mandatory.
+
+Half-day leave must be supported according to the existing implementation/business rules.
+
+---
+
+# 7. Leave approval workflow
+
+Employee applies for leave.
+
+The request goes to Admin.
+
+Admin can:
+
+* Approve
+* Reject
+* Cancel an approved leave
+
+When a leave is approved:
+
+* The approved leave days must be deducted from the corresponding leave type.
+* An email must be sent to all users.
+
+When an approved leave is cancelled:
+
+* The deducted leave balance must be returned.
+
+When a leave is rejected:
+
+* It must not deduct leave balance.
+
+For pending leave:
+
+* Employee can withdraw/remove their own pending leave request.
+
+For approved, rejected, or cancelled leave:
+
+* Employee should only be able to view the record.
+* They should not be able to remove it themselves.
+
+---
+
+# 8. Leave balance
+
+Employee dashboard should show a grid containing:
+
+* EL
+* CL
+* SL
+* FL
+* WFH
+
+For each leave type show:
+
+* Total
+* Taken
+* Remaining
+
+Do NOT show:
+
+* Management Leave
+* National Holiday
+
+in the employee leave balance.
+
+For display:
+
+Remaining = Total - Approved/Taken
+
+However, when validating a new leave application, make sure pending requests are also considered so that employees cannot create multiple pending requests that exceed their available balance.
+
+---
+
+# 9. Common Calendar
+
+The current project has two calendars:
+
+* My Calendar
+* Company Calendar
+
+This is not required.
+
+There should be **ONE common calendar** used by both Admin and Employee.
+
+Remove the unnecessary separation between My Calendar and Company Calendar.
+
+The calendar should initially show the current month.
+
+Users should be able to:
+
+* Navigate to previous month
+* Navigate to next month
+
+The calendar should support the following events:
+
+### Employee information
+
+* Employee birthday
+* Work anniversary
+* Resignation / notice period information
+
+### Leave information
+
+* Sick Leave taken by employees
+
+If applicable according to the existing business rules, show relevant employee leave information on the calendar.
+
+### Company holidays
+
+* Management Leave
+* National Holiday
+
+Management Leave and National Holiday should be visually identifiable/faded and should display the reason/details.
+
+The calendar should be common to Admin and Employee, while respecting any necessary visibility/security rules.
+
+---
+
+# 10. Birthday email
+
+When it is an employee's birthday:
+
+* Send a birthday email to all users.
+* The birthday employee should also be included.
+
+This notification is separate from the leave approval email.
+
+Do not send unnecessary additional notification emails unless already required by the existing business requirement.
+
+---
+
+# 11. Leave approval email
+
+Email should be sent **only when a leave is approved**.
+
+When Admin approves an employee leave:
+
+* Send the email to all users.
+
+Do not assume that emails are required for:
+
+* leave application
+* leave rejection
+* leave cancellation
+
+unless the existing implementation has a technical dependency that must be preserved.
+
+The required business notification is the approval notification.
+
+---
+
+# 12. Profile
+
+Employee profile should allow the employee to:
+
+* View profile
+* Edit profile information
+* Add profile image
+* Change profile image
+* Remove/delete profile image
+
+Profile image upload must validate:
+
+* Allowed file format
+* Required image dimensions
+
+Username and password should remain separate from normal profile information.
+
+Do not unnecessarily mix authentication credentials with profile details.
+
+---
+
+# 13. Database / architecture
+
+Keep the domain concepts separated properly.
+
+The design should conceptually be:
+
+EMPLOYEE LEAVE
+
+* EL
+* SL
+* CL
+* FL
+* WFH
+
+COMPANY HOLIDAY
+
+* Management Leave
+* National Holiday
+
+CALENDAR EVENTS
+
+* Birthday
+* Work Anniversary
+* Resignation / Notice Period
+* Employee Leave
+* Management Leave
+* National Holiday
+
+Do not model Management Leave and National Holiday as normal employee leave types.
+
+---
+
+# 14. Preserve working functionality
+
+A major requirement is that the current project is already mostly working.
+
+Therefore:
+
+* Reuse existing code wherever it already satisfies the requirement.
+* Do not rewrite working APIs unnecessarily.
+* Do not change authentication unnecessarily.
+* Do not replace the entire database design unnecessarily.
+* Do not replace the React architecture unnecessarily.
+* Do not introduce a new framework/library unless required.
+* Do not change unrelated functionality.
+* Avoid breaking existing working features.
+
+The goal is **targeted restructuring**, not a complete rewrite.
+
+---
+
+# 15. README / documentation
+
+The existing README contains some outdated requirements.
+
+After restructuring, update the README so that it reflects the actual implementation and requirements above.
+
+The README must not continue documenting:
+
+* Optional Holiday as a separate feature
+* Two separate calendars
+* Old leave quotas
+* Management/National Holiday as employee leave types
+
+---
+
+# 16. Important exclusions
+
+Do NOT introduce or preserve these as requirements:
+
+* Separate Optional Holiday module
+* Separate My Calendar and Company Calendar
+* Pro-rated leave allocation
+* Next-year/automatic yearly allocation as a special requirement
+* Additional notification emails beyond the required approval email and birthday email
+* Any unnecessary employee leave type
+
+The leave quotas should remain exactly:
+
+EL = 15
+SL = 6
+CL = 6
+FL = 3
+WFH = 40
+
+---
+
+# Expected approach
+
+First, inspect the complete existing project.
+
+Then provide me with a structured analysis in this format:
+
+### A. Already Correct
+
+List functionality that already satisfies the requirements and should be preserved.
+
+### B. Needs Modification
+
+List the existing functionality that needs changes.
+
+### C. Needs Removal
+
+List functionality that should be removed, especially Optional Holiday and duplicate calendar functionality.
+
+### D. Needs Addition
+
+List functionality missing from the current project.
+
+### E. Database Changes
+
+List required table/SP/model changes.
+
+### F. Backend Changes
+
+List required API/controller/service/model changes.
+
+### G. Frontend Changes
+
+List required page/component/navigation changes.
+
+### H. Notification Changes
+
+List the exact email scenarios that need to remain/add/change.
+
+### I. Migration / Risk
+
+Identify changes that could break existing functionality and how to make them safely.
+
+**Do not start implementing immediately.**
+
+First give me this analysis and proposed restructuring plan. I will review it, and only after that should we start modifying the code.
+
+This version incorporates your corrections: **no pro-rating, no yearly-allocation requirement, no admin-employee-management conflict point, and email notifications only for leave approval plus the separately required birthday email.**
+
+
+In addition to this 00
+try to add / update :  
+
+
+
+fetaure to add
+
+
+
+view password eye symbol (eye symbol to see password)
+
+
+
+instead of companu hoiday GIve company planning overview other employee can see 
+
+admin can add
+
+
+
+single login portal adn according to user type login as admin /employee
+
+
+
+while applying leave give toggle for single day leve / multiple and then show from - to date 
+
+
+
+
+
+after approved popup should success  / failded popup should goafter some seconds
+
+must have Option to change password , /forget password
+
+
+
+reimbursement form ,
+
+referrel form 
+
+
+
+Salary slip download (fetch document on that folder with User ID, Year , month)
+Expense claim ( reimbursement application : share link)
+
+
+
+
+
+also should not redirect to change password , must have button to change password and then 
+
+also edit feature is missing 
+
+
+
+autocalculate working days since join till current date and display,
+
+
+
+also when project run always login should visible if i login and then logout i should get logout ,
+
+from login when i hit  url of any endpoint until i logged in it should not allow me to login.
+
+
+
+On right top corner i have my name with symbol there also make change so that when i click on it i should able to go in profile section .
+
+
+
+if possible give trending button near profile after clicking on it 
+
+popup should appear and in it there should be round animation with slow speed running which shows images of bday person, Anniversary person , National holiday within that month .
+
+
+
+
+
+Email sending is missing.
+
+
+
+Under holiday list you can give submenu to show national holidays and Management leaves
+
+
+
+Yearly company planning  :
+
+Need one more option as Company planning where one more calender will be displayed for Companies release and all 
+
+1 our company has 4 NTNS release per year (per 3 month on sunday), (NT)
+
+2 just one week before NTNS release we have dry run (IT)
+
+2 some event /functions organise (E)
+
+
+
+
+
+Per 15 days one Wednesday release for SNU (if it's date come near NTNS release it's cancelled ).
+
+
+
+so this planning calender should be present which shows only company planning , 
+
+
+
+admin can add/ edit planning it ,  employee can view it only ,
+
+
+
+-----------------------------------------------------------------
+Remember Project i want is in ado dot net core and react (typescript) i.e single project containing dot net core(of c sharp) as backend and React as front end 
+
+
+also Name WHole project as 'HRM'
+
+Backend project as HRM.Server
+and of react as HRM.Client

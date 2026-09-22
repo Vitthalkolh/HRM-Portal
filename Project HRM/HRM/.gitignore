@@ -1,0 +1,30 @@
+# Build output
+bin/
+obj/
+dist/
+node_modules/
+
+# Local configuration and secrets - never commit these
+appsettings.Local.json
+appsettings.Production.json
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime data: uploads and the development mail sink
+**/App_Data/
+
+# Editors and OS
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Logs and coverage
+*.log
+coverage/
+TestResults/
